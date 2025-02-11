@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  ############################
+  # Prometheus
+  ############################
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - vectorlens
+      - documentstore
+      - chatapi
+
+  ############################
+  # Grafana
+  ############################
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  ############################
+  # VectorLens Service
+  ############################
+  vectorlens:
+    build:
+      context: ./services
+    container_name: vectorlens
+    ports:
+      - "8001:8000"
+    command: uvicorn vectorlens_service:app --host 0.0.0.0 --port 8000
+
+  ############################
+  # DocumentStore Service
+  ############################
+  documentstore:
+    build:
+      context: ./services
+    container_name: documentstore
+    ports:
+      - "8002:8000"
+    command: uvicorn documentstore_service:app --host 0.0.0.0 --port 8000
+
+  ############################
+  # ChatAPI Service
+  ############################
+  chatapi:
+    build:
+      context: ./services
+    container_name: chatapi
+    ports:
+      - "8003:8000"
+    command: uvicorn chatapi_service:app --host 0.0.0.0 --port 8000

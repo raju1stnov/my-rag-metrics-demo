@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "vectorlens"
+    static_configs:
+      - targets: ["vectorlens:8000"]
+
+  - job_name: "documentstore"
+    static_configs:
+      - targets: ["documentstore:8000"]
+
+  - job_name: "chatapi"
+    static_configs:
+      - targets: ["chatapi:8000"]

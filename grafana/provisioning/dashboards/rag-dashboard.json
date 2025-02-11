@@ -1,0 +1,81 @@
+{
+  "id": null,
+  "uid": "rag_demo_dashboard",
+  "title": "RAG Metrics Dashboard",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "VectorLens Requests",
+      "targets": [
+        {
+          "expr": "rate(vectorlens_requests_total[1m])",
+          "legendFormat": "Requests/sec"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "DocumentStore Requests",
+      "targets": [
+        {
+          "expr": "rate(documentstore_requests_total[1m])",
+          "legendFormat": "Requests/sec"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "ChatAPI Requests",
+      "targets": [
+        {
+          "expr": "rate(chatapi_requests_total[1m])",
+          "legendFormat": "Requests/sec"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Latency Comparison",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(vectorlens_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "VectorLens P95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(documentstore_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "DocStore P95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(chatapi_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "ChatAPI P95"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Error Rates",
+      "targets": [
+        {
+          "expr": "rate(vectorlens_error_total[5m]) / rate(vectorlens_requests_total[5m])",
+          "legendFormat": "VectorLens Error Rate"
+        },
+        {
+          "expr": "rate(documentstore_error_total[5m]) / rate(documentstore_requests_total[5m])",
+          "legendFormat": "DocStore Error Rate"
+        },
+        {
+          "expr": "rate(chatapi_error_total[5m]) / rate(chatapi_requests_total[5m])",
+          "legendFormat": "ChatAPI Error Rate"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+    }
+  ],
+  "schemaVersion": 27,
+  "version": 1
+}
