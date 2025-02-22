@@ -1,0 +1,16 @@
+graph LR
+    subgraph BigQuery
+        table["BigQuery Table\nSchema:\n- event_id STRING\n- user_email_id STRING\n- tenant_name STRING\n- api_endpoint STRING\n- event_trigger_time TIMESTAMP\n- event_completion_time TIMESTAMP\n- status STRING\n- components ARRAY<STRUCT<component_type STRING, operation_type STRING, elapsed_time_ms INT64, usage_cost FLOAT64, details STRING>>\n- total_elapsed_time_ms INT64\n- total_usage_cost FLOAT64"]
+    end
+
+    rag[RAG Query] -->|docstore, llm| table
+    governance[AI Governance Check] -->|governance| table
+    sql[SQL Generation] -->|sql_generator| table
+    image[Image Generation] -->|image_model| table
+    summary[Text Summarization] -->|llm| table
+    sentiment[Sentiment Analysis] -->|sentiment_model| table
+    extraction[Data Extraction] -->|extraction_model| table
+    translation[Translation] -->|translation_model| table
+    code[Code Generation] -->|code_model| table
+    recommendation[Recommendation System] -->|recommendation_model| table
+    complex[Complex Workflow] -->|sql_generator, llm| table
