@@ -16,6 +16,7 @@ __pycache__/
 # Logs and database files
 *.log
 *.sqlite3
+*.bkp
 
 # Ignore Docker-related files
 docker-compose.override.yml

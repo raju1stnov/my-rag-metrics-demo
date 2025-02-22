@@ -1,0 +1,30 @@
+{
+    "dashboard": {
+      "title": "API Usage Analytics (BigQuery)",
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Monthly Cost by Tenant",
+          "targets": [
+            {
+              "datasource": "BigQuery",
+              "rawSql": "SELECT tenant_name, FORMAT_TIMESTAMP('%Y-%m', event_trigger_time) AS month, SUM(docstore_usage_cost + llm_usage_cost) AS total_cost FROM `your-gcp-project-id.your-dataset.api_usage_metrics` GROUP BY tenant_name, month ORDER BY month, total_cost DESC;",
+              "rawQuery": true
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Average Latency by API Endpoint",
+          "targets": [
+            {
+              "datasource": "BigQuery",
+              "rawSql": "SELECT api_endpoint, AVG(docstore_elapsed_time_ms + llm_elapsed_time_ms) AS avg_latency_ms FROM `your-gcp-project-id.your-dataset.api_usage_metrics` GROUP BY api_endpoint ORDER BY avg_latency_ms DESC;",
+              "rawQuery": true
+            }
+          ]
+        }
+      ]
+    },
+    "overwrite": true
+  }  

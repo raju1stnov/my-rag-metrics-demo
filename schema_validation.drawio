@@ -1,0 +1,112 @@
+<mxfile host="Electron" modified="2025-02-21T21:15:54.237Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.8 Chrome/114.0.5735.289 Electron/25.5.0 Safari/537.36" etag="Ve6OAvVkWDSmR2l8jA-m" version="21.6.8" type="device">
+  <diagram name="Page-1" id="FDvxWxQh6cu_mSBmReBs">
+    <mxGraphModel dx="1674" dy="836" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-29" value="BigQuery" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="524" y="1259" width="313" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-30" value="Table: api_usage_metrics&#xa;Schema TBD based on approach" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="559" y="1284" width="243" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-31" value="Cloud Function" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="547" y="1058" width="267" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-32" value="Cloud Function&#xa;validate_and_load_to_bq&#xa;- Validates schema&#xa;- Inserts into BigQuery" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="582" y="1083" width="197" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-33" value="Google Cloud Pub/Sub" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="230" y="940" width="1007" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-34" value="Pub/Sub Topic&#xa;api_usage_metrics_topic" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="594" y="965" width="192" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-35" value="Event Sources" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="10" y="600" width="1272" height="219" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-36" value="Document Search API" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="70" y="626" width="166" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-37" value="Chat API" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="698" y="626" width="75" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-38" value="RAG FastAPI Backend" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="155" y="745" width="167" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-39" value="AI Governance Source" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="372" y="745" width="172" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-40" value="SQL Generator Source" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="594" y="745" width="172" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-41" value="Image Generation Source" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="816" y="745" width="196" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-42" value="Text Summarization Source" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1061" y="745" width="211" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-43" value="Note: RAG aggregates docstore and llm&#xa;Other sources send directly to Pub/Sub&#xa;Validation occurs in Cloud Function" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1342" y="610" width="298" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-44" value="docstore component" style="curved=1;startArrow=none;endArrow=block;exitX=0.5015177899096386;exitY=1;entryX=0.3317547626228126;entryY=0;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-36" target="qyQ3UBfrK4mCSJiBcqVQ-38">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="153" y="711" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-45" value="llm component" style="curved=1;startArrow=none;endArrow=block;exitX=0.5040885416666666;exitY=1;entryX=0.9990994573353293;entryY=0.24629562966324373;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-37" target="qyQ3UBfrK4mCSJiBcqVQ-38">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="736" y="711" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-46" value="Aggregates docstore, llm&#xa;Generates dictionary" style="curved=1;startArrow=none;endArrow=block;exitX=0.5003859468562875;exitY=1;entryX=-0.000579833984375;entryY=0.28214055048793624;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-38" target="qyQ3UBfrK4mCSJiBcqVQ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="239" y="889" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-47" value="Generates governance&#xa;dictionary" style="curved=1;startArrow=none;endArrow=block;exitX=0.5003520167151163;exitY=1;entryX=-0.000579833984375;entryY=0.06675346611302643;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-39" target="qyQ3UBfrK4mCSJiBcqVQ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="458" y="889" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-48" value="Generates sql_generator&#xa;dictionary" style="curved=1;startArrow=none;endArrow=block;exitX=0.5004428597383721;exitY=1;entryX=0.500396728515625;entryY=0;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-40" target="qyQ3UBfrK4mCSJiBcqVQ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-49" value="Generates image_model&#xa;dictionary" style="curved=1;startArrow=none;endArrow=block;exitX=0.49831592793367346;exitY=1;entryX=1.001373291015625;entryY=0.08822742474916367;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-41" target="qyQ3UBfrK4mCSJiBcqVQ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="914" y="889" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-50" value="Generates llm&#xa;dictionary" style="curved=1;startArrow=none;endArrow=block;exitX=0.5012496297393365;exitY=1;entryX=1.001373291015625;entryY=0.30236291254655157;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-42" target="qyQ3UBfrK4mCSJiBcqVQ-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1167" y="889" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-51" value="Triggers" style="curved=1;startArrow=none;endArrow=block;exitX=0.500396728515625;exitY=1;entryX=0.49784858819796957;entryY=0;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-34" target="qyQ3UBfrK4mCSJiBcqVQ-32">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qyQ3UBfrK4mCSJiBcqVQ-52" value="Validated Data" style="curved=1;startArrow=none;endArrow=block;exitX=0.49784858819796957;exitY=1;entryX=0.49825585133744854;entryY=0;rounded=0;" edge="1" parent="1" source="qyQ3UBfrK4mCSJiBcqVQ-32" target="qyQ3UBfrK4mCSJiBcqVQ-30">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

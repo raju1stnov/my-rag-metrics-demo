@@ -1,0 +1,36 @@
+graph TD
+    subgraph Sources[Event Sources]
+        doc[Document Search API]
+        chat[Chat API]
+        rag[RAG FastAPI Backend]
+        gov[AI Governance Source]
+        sql[SQL Generator Source]
+        img[Image Generation Source]
+        txt[Text Summarization Source]
+    end
+
+    subgraph PubSub[Google Cloud Pub/Sub]
+        topic[Pub/Sub Topic<br/>api_usage_metrics_topic]
+    end
+
+    subgraph CloudFunction[Cloud Function]
+        cf[Cloud Function<br/>validate_and_load_to_bq<br/>- Validates schema<br/>- Inserts into BigQuery]
+    end
+
+    subgraph BigQuery[BigQuery]
+        bq[Table: api_usage_metrics<br/>Schema TBD based on approach]
+    end
+
+    doc -->|docstore component| rag
+    chat -->|llm component| rag
+    rag -->|Aggregates docstore, llm<br/>Generates dictionary| topic
+
+    gov -->|Generates governance<br/>dictionary| topic
+    sql -->|Generates sql_generator<br/>dictionary| topic
+    img -->|Generates image_model<br/>dictionary| topic
+    txt -->|Generates llm<br/>dictionary| topic
+
+    topic -->|Triggers| cf
+    cf -->|Validated Data| bq
+
+    note[Note: RAG aggregates docstore and llm<br/>Other sources send directly to Pub/Sub<br/>Validation occurs in Cloud Function]

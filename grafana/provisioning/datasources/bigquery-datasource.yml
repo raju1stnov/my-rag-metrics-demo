@@ -1,0 +1,10 @@
+apiVersion: 1
+datasources:
+  - name: BigQuery
+    type: grafana-bigquery-datasource
+    access: proxy
+    isDefault: false
+    jsonData:
+      authenticationType: "gce"
+      defaultProject: "your-gcp-project-id"
+      processingLocation: "US"
