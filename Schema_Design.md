@@ -1,15 +1,12 @@
 **"API Metrics Schema Design: Scalable & Flexible Approach for Future-Proof Analytics"**
 
-
 ### **1. Overview**
 
 This page outlines a schema design for storing API usage metrics in BigQuery, optimized for flexibility, scalability, and ease of integration with new components. The system is designed to support a production-grade pipeline with validation, aggregation, and analytics capabilities.
 
-
 ### **2. System Architecture**
 
 **Mermaid Diagram:**
-
 
 ### **3. Schema Design Approaches**
 
@@ -61,7 +58,6 @@ This page outlines a schema design for storing API usage metrics in BigQuery, op
 			"details": "{"num_docs_returned": 5, "index_version": "v1.2"}"
 		}
 ```
-
 
 ##### approach 2 -- Use a Nested STRUCT plus json
 
@@ -119,7 +115,6 @@ This page outlines a schema design for storing API usage metrics in BigQuery, op
 		}
 ```
 
-
 ##### approach 3 - Fully Structured per Component Type
 
     CREATE TABLE`your-gcp-project-id.your-dataset.api_usage_metrics` (
@@ -166,7 +161,6 @@ This page outlines a schema design for storing API usage metrics in BigQuery, op
 		  "governance_details": null
 	}
 
-
 ##### approach 4 - json Type
 
     CREATE TABLE`your-gcp-project-id.your-dataset.api_usage_metrics` (
@@ -210,14 +204,12 @@ This page outlines a schema design for storing API usage metrics in BigQuery, op
 		  "details": {"model": "gpt-4", "input_tokens": 100, "output_tokens": 200}
 		}
 
-
 | **Approach**                | **Flexibility** | **Queryability** | **Validation Ease** | **Pros**                          | **Cons**                          |
 | --------------------------------- | --------------------- | ---------------------- | ------------------------- | --------------------------------------- | --------------------------------------- |
 | **1. JSON String**          | High                  | Moderate               | Moderate                  | Extensible, backward compatible         | Requires JSON parsing                   |
 | **2. Nested STRUCT + JSON** | Moderate              | High                   | High                      | Structured + flexible, queryable fields | Needs common fields defined upfront     |
 | **3. Fully Structured**     | Low                   | High                   | High                      | Fully typed, no parsing                 | Inflexible, schema changes needed       |
 | **4. JSON Type**            | High                  | High                   | Moderate                  | Native JSON, no st                      | Requires validation for required fields |
-
 
 ### **4. Recommended Schema (Approach 4: JSON Type)**
 
@@ -226,6 +218,7 @@ This page outlines a schema design for storing API usage metrics in BigQuery, op
 ```
 CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
   event_id STRING,
+  app_name STRING,  
   user_email_id STRING,
   tenant_name STRING,
   api_endpoint STRING,
@@ -240,7 +233,8 @@ CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
     details JSON
   >>,
   total_elapsed_time_ms INT64,
-  total_usage_cost FLOAT64
+  total_cost FLOAT64,
+  no_of_token_used INT64
 );
 ```
 
@@ -260,8 +254,72 @@ CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
 }
 ```
 
+### 5. Some data example
 
-### **5. Schema Validation in Cloud Function**
+```
+{
+    "event_id": "evt_001",
+    "app_name": "sqlstar",
+    "user_email_id": "user1@example.com",
+    "tenant_name": "tenant_a",
+    "api_endpoint": "/api/sqlstar",
+    "event_trigger_time": "2024-01-01 10:00:00",
+    "event_completion_time": "2024-01-01 10:00:02",
+    "status": "SUCCESS",
+    "components": [
+        {
+            "component_type": "metadata_call",
+            "operation_type": "attribute_search",
+            "elapsed_time_ms": 45,
+            "usage_cost": 0.02,
+            "details": {"returned_sql": "table attribute information", }
+        },
+        {
+            "component_type": "llm_call",
+            "operation_type": "text_generation",
+            "elapsed_time_ms": 1200,
+            "usage_cost": 0.15,
+            "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000}
+        }
+    ],
+    "total_elapsed_time_ms": 1245,
+    "total_cost": 0.17,
+	"no_of_token_used": 3000
+}
+
+
+{
+    "event_id": "evt_001",
+    "app_name": "vectorlens",
+    "user_email_id": "user1@example.com",
+    "tenant_name": "tenant_a",
+    "api_endpoint": "/api/vectorlens",
+    "event_trigger_time": "2024-01-01 10:00:00",
+    "event_completion_time": "2024-01-01 10:00:02",
+    "status": "SUCCESS",
+    "components": [
+        {
+            "component_type": "documentsearch",
+            "operation_type": "vector_search",
+            "elapsed_time_ms": 45,
+            "usage_cost": 0.02,
+            "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000, "no_of_docs_returned": 5}
+        },
+        {
+            "component_type": "chatapi",
+            "operation_type": "text_generation",
+            "elapsed_time_ms": 1200,
+            "usage_cost": 0.15,
+            "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000}
+        }
+    ],
+    "total_elapsed_time_ms": 1245,
+    "total_cost": 0.17,
+	"no_of_token_used": 3000
+}
+```
+
+### **6. Schema Validation in Cloud Function**
 
 **Validation Workflow:**
 
@@ -275,84 +333,121 @@ CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
 import base64
 import json
 from google.cloud import bigquery
-from jsonschema import validate, ValidationError
 import logging
 
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# BigQuery client
 client = bigquery.Client()
 TABLE_ID = "your-gcp-project-id.your-dataset.api_usage_metrics"
 
-# Define validation schemas for each operation_type
-SCHEMAS = {
-    "vector_search": {
-        "type": "object",
-        "required": ["num_docs_returned"],
-        "properties": {
-            "num_docs_returned": {"type": "integer"},
-            "index_version": {"type": "string"}
-        },
-        "additionalProperties": True
-    },
-    # Add schemas for other operation_types...
-}
+# Mandatory fields for each component
+MANDATORY_FIELDS = ["component_type", "operation_type", "elapsed_time_ms", "usage_cost"]
 
 def validate_component(component):
-    operation_type = component["operation_type"]
-    details = component["details"]
-    schema = SCHEMAS.get(operation_type)
-    if not schema:
-        logger.error(f"No schema for {operation_type}")
+    """Validate a single component's mandatory fields and details."""
+    # Check for mandatory fields
+    for field in MANDATORY_FIELDS:
+        if field not in component:
+            logger.error(f"Missing mandatory field: {field}")
+            return False
+  
+    # Check if details is a valid JSON object (dict in Python)
+    details = component.get("details", {})
+    if not isinstance(details, dict):
+        logger.error("Details must be a dictionary (JSON object)")
         return False
-    try:
-        validate(instance=details, schema=schema)
-        return True
-    except ValidationError as e:
-        logger.error(f"Validation failed: {e}")
-        return False
+  
+    return True
 
 def main(event, context):
-    data = base64.b64decode(event["data"]).decode("utf-8")
+    """Cloud Function triggered by Pub/Sub."""
+    # Decode Pub/Sub message
+    pubsub_message = event.get("data")
+    if not pubsub_message:
+        logger.error("No data in Pub/Sub message")
+        return
+
+    data = base64.b64decode(pubsub_message).decode("utf-8")
     record = json.loads(data)
-  
-    # Validate components
+
+    # Validate each component
+    components = record.get("components", [])
     valid_components = []
-    for component in record["components"]:
+    all_valid = True
+
+    for component in components:
         if validate_component(component):
             valid_components.append(component)
         else:
-            logger.error(f"Invalid component: {component}")
-            return
-  
+            all_valid = False
+
+    if not all_valid:
+        logger.error(f"Skipping record {record['event_id']} due to invalid components")
+        return
+
+    # Prepare record for BigQuery
+    bq_record = {
+        "event_id": record["event_id"],
+        "event_name": record["event_name"],
+        "user_email_id": record["user_email_id"],
+        "tenant_name": record["tenant_name"],
+        "api_endpoint": record["api_endpoint"],
+        "event_trigger_time": record["event_trigger_time"],
+        "event_completion_time": record["event_completion_time"],
+        "status": record["status"],
+        "components": valid_components,
+        "total_elapsed_time_ms": record["total_elapsed_time_ms"],
+        "total_cost": record["total_cost"],
+        "no_of_token_used": record["no_of_token_used"]
+    }
+
     # Insert into BigQuery
-    bq_record = {**record, "components": valid_components}
     errors = client.insert_rows_json(TABLE_ID, [bq_record])
     if errors:
-        logger.error(f"Insert failed: {errors}")
+        logger.error(f"Failed to insert record {record['event_id']}: {errors}")
     else:
-        logger.info("Record inserted successfully")
+        logger.info(f"Successfully inserted record {record['event_id']}")
 
-# Example usage
+# Example usage (for local testing)
 if __name__ == "__main__":
     sample_event = {
         "data": base64.b64encode(json.dumps({
-            "event_id": "evt_123",
+            "event_id": "evt_001",
+            "event_name": "sqlstar",
+            "user_email_id": "user1@example.com",
+            "tenant_name": "tenant_a",
+            "api_endpoint": "/api/sqlstar",
+            "event_trigger_time": "2024-01-01 10:00:00",
+            "event_completion_time": "2024-01-01 10:00:02",
+            "status": "SUCCESS",
             "components": [
                 {
-                    "component_type": "docstore",
-                    "operation_type": "vector_search",
-                    "details": {"num_docs_returned": 5}
+                    "component_type": "metadata_call",
+                    "operation_type": "attribute_search",
+                    "elapsed_time_ms": 45,
+                    "usage_cost": 0.02,
+                    "details": {"returned_sql": "table attribute information"}
+                },
+                {
+                    "component_type": "llm_call",
+                    "operation_type": "text_generation",
+                    "elapsed_time_ms": 1200,
+                    "usage_cost": 0.15,
+                    "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000}
                 }
-            ]
-        }).encode()).decode()
+            ],
+            "total_elapsed_time_ms": 1245,
+            "total_cost": 0.17,
+            "no_of_token_used": 3000
+        }).encode("utf-8"))
     }
     main(sample_event, None)
 ```
 
-
-
-### **6. Why This System is Scalable**
+### **7. Why This System is Scalable**
 
 1. **Future-Proof Flexibility** :
 
@@ -370,8 +465,7 @@ if __name__ == "__main__":
 * Use BigQuery’s `JSON_VALUE`/`JSON_EXTRACT` for querying JSON fields.
 * Pre-aggregated fields (`total_usage_cost`) enable fast reporting.
 
-
-### **7. Next Steps**
+### **8. Next Steps**
 
 1. Finalize validation schemas for all existing components.
 2. Deploy Cloud Function with monitoring (e.g., error logging to Stackdriver).
