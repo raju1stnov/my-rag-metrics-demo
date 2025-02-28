@@ -289,33 +289,70 @@ CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
 
 
 {
-    "event_id": "evt_001",
-    "app_name": "vectorlens",
-    "user_email_id": "user1@example.com",
-    "tenant_name": "tenant_a",
-    "api_endpoint": "/api/vectorlens",
-    "event_trigger_time": "2024-01-01 10:00:00",
-    "event_completion_time": "2024-01-01 10:00:02",
-    "status": "SUCCESS",
-    "components": [
-        {
-            "component_type": "documentsearch",
-            "operation_type": "vector_search",
-            "elapsed_time_ms": 45,
-            "usage_cost": 0.02,
-            "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000, "no_of_docs_returned": 5}
-        },
-        {
-            "component_type": "chatapi",
-            "operation_type": "text_generation",
-            "elapsed_time_ms": 1200,
-            "usage_cost": 0.15,
-            "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000}
-        }
-    ],
-    "total_elapsed_time_ms": 1245,
-    "total_cost": 0.17,
-	"no_of_token_used": 3000
+	"event_id": "evt_001",
+	"service_name": "rag_fastapi_backend",
+	"user_email_id": "user1@example.com",
+	"tenant_name": "tenant_a",
+	"api_endpoint": "/api/rag_fastapi_backend",
+	"event_trigger_time": "2024-01-01 10:00:00",
+	"event_completion_time": "2024-01-01 10:00:02",
+	"status": "SUCCESS",
+	"components": [
+		{
+			"component_type": "documentsearch",
+			"operation_type": "vector_search",
+			"elapsed_time_ms": 450, / Total time for the component search_latency_ms plus embedding_latency_ms
+			"usage_cost": 0.05, // Cost of the API call (e.g., embedding generation)
+			"details": {
+				"embedding_provider": "openai", // Provider of the embedding model
+				"embedding_model": "gpt-4", // Model used for embedding generation
+				"input_tokens": 500, // Number of tokens in the query
+				"retrieved_documents": 5, // Total documents retrieved (before filtering)
+				"document_store": "document_store_v1", #This identifies which document collection/index was searched. In RAG systems, you often have multiple document repositories
+				"search_latency_ms": 300, # Time spent on retrival only
+				"embedding_latency_ms": 150, # Time spend on embedding generation
+				"query_context": "please give me the agreement documents from 2024 in csv format"
+				"search_parameters": {
+					"top_k": 5,
+					"filter": "year=2024 AND format=csv AND document_type=agreement", // Metadata filter
+					"min_similarity": 0.65 // Minimum similarity score for results
+				},
+				"retrieved_documents": [
+					  {"doc_id": "KB-123", "score": 0.72},
+					  {"doc_id": "KB-456", "score": 0.68}
+				]							
+			}
+		},
+		{
+			"component_type": "chatapi",
+			"operation_type": "text_generation",
+			"elapsed_time_ms": 300,  // Total time for LLM processing
+			"usage_cost": 0.15,      // Cost of the LLM API call
+			"details": {
+				"llm_provider": "openai",  // LLM provider (e.g., OpenAI, Anthropic)
+				"llm_model": "gpt-4",      // Model used for response generation
+				"input_tokens": 1200,      // Tokens in the prompt (query + documents)
+				"output_tokens": 300,      // Tokens in the generated response
+				"llm_context": {           // Combined context for LLM
+					"user_query": "please give me the agreement documents from 2024 in csv format",
+					"retrieved_documents": [
+						{"doc_id": "KB-123", "score": 0.72},
+						{"doc_id": "KB-456", "score": 0.68}
+					]
+				},
+				"prompt": "Here is the user's query: 'please give me the agreement documents from 2024 in csv format'.\n\nRelevant documents:\n- KB-123 (score: 0.72)\n- KB-456 (score: 0.68)\n\nPlease generate a response based on the above documents.",  // Exact prompt sent to the LLM
+				"response_text": "Here are the agreement documents from 2024 in CSV format...",  // LLM-generated answer
+				"parameters": {  // LLM configuration
+					"temperature": 0.7,
+					"max_tokens": 500,
+					"top_p": 1.0
+				}
+			}
+		}
+	],
+	"total_elapsed_time_ms": 750, #should be summation of both the components of this service
+	"total_cost": 0.17,
+	"no_of_token_used": 2000 #total time for both the above components
 }
 ```
 
@@ -333,7 +370,9 @@ CREATE TABLE `your-gcp-project-id.your-dataset.api_usage_metrics` (
 import base64
 import json
 from google.cloud import bigquery
+from jsonschema import validate, ValidationError
 import logging
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -343,27 +382,122 @@ logger = logging.getLogger(__name__)
 client = bigquery.Client()
 TABLE_ID = "your-gcp-project-id.your-dataset.api_usage_metrics"
 
-# Mandatory fields for each component
-MANDATORY_FIELDS = ["component_type", "operation_type", "elapsed_time_ms", "usage_cost"]
+# Mandatory fields for top level
+TOP_LEVEL_FIELDS = [
+    "event_id", "service_name", "user_email_id", "tenant_name",
+    "api_endpoint", "event_trigger_time", "event_completion_time",
+    "status", "components", "total_elapsed_time_ms", "total_cost",
+    "no_of_token_used"
+]
+
+# Schema for component details
+SCHEMAS = {
+    "vector_search": {
+        "type": "object",
+        "required": [
+            "embedding_provider",
+            "embedding_model",
+            "input_tokens",
+            "number_of_retrieved_documents",
+            "document_store",
+            "search_latency_ms",
+            "query_context",
+            "retrieved_documents"
+        ],
+        "properties": {
+            "embedding_provider": {"type": "string"},
+            "embedding_model": {"type": "string"},
+            "input_tokens": {"type": "integer"},
+            "number_of_retrieved_documents": {"type": "integer"},
+            "document_store": {"type": "string"},
+            "search_latency_ms": {"type": "integer"},
+            "query_context": {"type": "string"},
+            "retrieved_documents": {"type": "array", "items": {"type": "object"}},
+        },
+        "additionalProperties": True
+    },
+    "generate_response": {
+        "type": "object",
+        "required": [
+            "llm_provider",
+            "llm_model",
+            "input_tokens",
+            "output_tokens",
+            "prompt"
+        ],
+        "properties": {
+            "llm_provider": {"type": "string"},
+            "llm_model": {"type": "string"},
+            "input_tokens": {"type": "integer"},
+            "output_tokens": {"type": "integer"},
+            "prompt": {"type": "string"},
+        },
+        "additionalProperties": True
+    }
+}
+
+def validate_top_level(record):
+    for field in TOP_LEVEL_FIELDS:
+        if field not in record:
+            logger.error(f"Missing top-level field: {field}")
+            return False
+        # Type checks
+        if field in ["event_id", "service_name", "user_email_id", "tenant_name", "api_endpoint", "status"]:
+            if not isinstance(record[field], str):
+                logger.error(f"{field} must be a string")
+                return False
+        elif field in ["total_elapsed_time_ms", "total_cost", "no_of_token_used"]:
+            if not isinstance(record[field], (int, float)):
+                logger.error(f"{field} must be a number")
+                return False
+        elif field in ["event_trigger_time", "event_completion_time"]:
+            try:
+                datetime.strptime(record[field], "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                logger.error(f"{field} format invalid, must be YYYY-MM-DD HH:MM:SS")
+                return False
+        elif field == "components":
+            if not isinstance(record[field], list):
+                logger.error(f"{field} must be a list")
+                return False
+    return True
 
 def validate_component(component):
-    """Validate a single component's mandatory fields and details."""
-    # Check for mandatory fields
-    for field in MANDATORY_FIELDS:
+    mandatory_fields = ["component_type", "operation_type", "elapsed_time_ms", "usage_cost"]
+    for field in mandatory_fields:
         if field not in component:
-            logger.error(f"Missing mandatory field: {field}")
+            logger.error(f"Component missing mandatory field: {field}")
             return False
-  
-    # Check if details is a valid JSON object (dict in Python)
+        if field in ["component_type", "operation_type"]:
+            if not isinstance(component[field], str):
+                logger.error(f"{field} must be a string")
+                return False
+        elif field in ["elapsed_time_ms", "usage_cost"]:
+            if not isinstance(component[field], (int, float)):
+                logger.error(f"{field} must be a number")
+                return False
+
     details = component.get("details", {})
     if not isinstance(details, dict):
         logger.error("Details must be a dictionary (JSON object)")
         return False
-  
+
+    operation_type = component.get("operation_type")
+    schema = SCHEMAS.get(operation_type)
+    if schema:
+        try:
+            validate(instance=details, schema=schema)
+        except ValidationError as e:
+            missing_fields = [f for f in schema.get("required", []) if f not in details]
+            if missing_fields:
+                logger.error(f"Missing details fields for operation_type {operation_type}: {', '.join(missing_fields)}")
+            else:
+                logger.error(f"Validation failed for operation_type {operation_type}: {e.message}")
+            return False
+
     return True
 
 def main(event, context):
-    """Cloud Function triggered by Pub/Sub."""
     # Decode Pub/Sub message
     pubsub_message = event.get("data")
     if not pubsub_message:
@@ -372,6 +506,11 @@ def main(event, context):
 
     data = base64.b64decode(pubsub_message).decode("utf-8")
     record = json.loads(data)
+
+    # Validate top-level fields
+    if not validate_top_level(record):
+        logger.error(f"Skipping record {record.get('event_id', 'unknown')} due to missing or invalid top-level fields")
+        return
 
     # Validate each component
     components = record.get("components", [])
@@ -391,7 +530,7 @@ def main(event, context):
     # Prepare record for BigQuery
     bq_record = {
         "event_id": record["event_id"],
-        "event_name": record["event_name"],
+        "service_name": record["service_name"],
         "user_email_id": record["user_email_id"],
         "tenant_name": record["tenant_name"],
         "api_endpoint": record["api_endpoint"],
@@ -410,41 +549,6 @@ def main(event, context):
         logger.error(f"Failed to insert record {record['event_id']}: {errors}")
     else:
         logger.info(f"Successfully inserted record {record['event_id']}")
-
-# Example usage (for local testing)
-if __name__ == "__main__":
-    sample_event = {
-        "data": base64.b64encode(json.dumps({
-            "event_id": "evt_001",
-            "event_name": "sqlstar",
-            "user_email_id": "user1@example.com",
-            "tenant_name": "tenant_a",
-            "api_endpoint": "/api/sqlstar",
-            "event_trigger_time": "2024-01-01 10:00:00",
-            "event_completion_time": "2024-01-01 10:00:02",
-            "status": "SUCCESS",
-            "components": [
-                {
-                    "component_type": "metadata_call",
-                    "operation_type": "attribute_search",
-                    "elapsed_time_ms": 45,
-                    "usage_cost": 0.02,
-                    "details": {"returned_sql": "table attribute information"}
-                },
-                {
-                    "component_type": "llm_call",
-                    "operation_type": "text_generation",
-                    "elapsed_time_ms": 1200,
-                    "usage_cost": 0.15,
-                    "details": {"llm_provider": "openai", "model": "gpt-4", "input_tokens": 1000, "output_tokens": 2000}
-                }
-            ],
-            "total_elapsed_time_ms": 1245,
-            "total_cost": 0.17,
-            "no_of_token_used": 3000
-        }).encode("utf-8"))
-    }
-    main(sample_event, None)
 ```
 
 ### **7. Why This System is Scalable**
